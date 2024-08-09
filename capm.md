@@ -81,7 +81,8 @@ $$
 $$
 
 ```r
-#fill the code
+df$AMD_dailyreturns <- (df$AMD - lag(df$AMD)) / lag(df$AMD)
+df$GSPC_dailyreturns <- (df$GSPC - lag(df$GSPC)) / lag(df$GSPC)
 ```
 
 - **Calculate Risk-Free Rate**: Calculate the daily risk-free rate by conversion of annual risk-free Rate. This conversion accounts for the compounding effect over the days of the year and is calculated using the formula:
@@ -91,21 +92,23 @@ $$
 $$
 
 ```r
-#fill the code
+df$RF_daily <- (1 + (df$RF / 100))^(1 / 360) - 1
 ```
 
 
 - **Calculate Excess Returns**: Compute the excess returns for AMD and the S&P 500 by subtracting the daily risk-free rate from their respective returns.
 
 ```r
-#fill the code
+df$AMD_excessreturns <- df$AMD_dailyreturns - df$RF_daily
+df$GSPC_excessreturns <- df$GSPC_dailyreturns - df$RF_daily
 ```
 
 
 - **Perform Regression Analysis**: Using linear regression, we estimate the beta (\(\beta\)) of AMD relative to the S&P 500. Here, the dependent variable is the excess return of AMD, and the independent variable is the excess return of the S&P 500. Beta measures the sensitivity of the stock's returns to fluctuations in the market.
 
 ```r
-#fill the code
+AMD_lm <- lm(AMD_excessreturns ~ GSPC_excessreturns, data = df)
+summary(AMD_lm)
 ```
 
 
@@ -114,13 +117,20 @@ $$
 What is your \(\beta\)? Is AMD more volatile or less volatile than the market?
 
 **Answer:**
+The $\beta$ is the coefficient of 'GSPC_excessreturns' which is 1.5699987 according to the output. As this is a linear regression, we can interpret this $\beta$ as for every 1 unit change in 'GSPC_excessreturns', 'AMD_excessreturns' changes by 1.5699987 units on average. This means for every 1% change in the S&P 500 excess return, we expect a 1.5699987% change in the AMD excess return. As we expect AMD to have a greater change in comparison to the S&P 500, we can deduce it is more volatile.
 
+Since the S&P 500 reflects the market, we can conclude that AMD is more volatile than the market, experiencing more fluctuations to either direction. The implications of this from an investment perspective is that AMD is a relatively risky investment, especially considering you are investing in a single stock so not diversifying risk. However, this also means that there is potential for higher returns by investing in the AMD than in the S&P500 or another safer stock portfolio. This is because a 1% increase in market returns leads to on average a 1.5699987% increase in AMD returns. If the investor expects the market to perform well and is risk-seeking, the AMD may be an appropriate investment choice. Regardless, it is advised that if the investor particularly wants to invest in AMD that they seek a portfolio that includes AMD as well as other stocks with lower volatility to account for the increased risk.
 
 #### Plotting the CAPM Line
 Plot the scatter plot of AMD vs. S&P 500 excess returns and add the CAPM regression line.
 
 ```r
-#fill the code
+ggplot(df, aes(x = GSPC_excessreturns, y = AMD_excessreturns)) +
+    geom_point(color = 'lightblue') +
+    geom_smooth(method = "lm", se = TRUE, color = 'orange') +
+    labs(title = 'AMD vs. S&P 500 Excess Returns with CAPM Regression Line',
+         x = 'S&P 500 Excess Returns',
+         y = 'AMD Excess Returns')
 ```
 
 ### Step 3: Predictions Interval
@@ -131,5 +141,14 @@ Suppose the current risk-free rate is 5.0%, and the annual expected return for t
 **Answer:**
 
 ```r
-#fill the code
+sf_daily <- 0.02567/sqrt(1256)
+sf_annual <- sf_daily*sqrt(252)
+AMD_expectedreturn <- 0.05 + 1.5699987 * (0.133 - 0.05)
+
+z_score <- qnorm(0.95)
+lower <- AMD_expectedreturn - z_score*sf_annual
+upper <- AMD_expectedreturn + z_score*sf_annual
+
+cat("AMD Annual Expected Return: ", AMD_expectedreturn)
+cat("Prediction Interval: [", lower, ", ", upper, "]")
 ```
